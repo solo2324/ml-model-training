@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Breast Cancer Predictor</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* --- Body & Background --- */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Montserrat", sans-serif;
+        background: linear-gradient(
+          135deg,
+          #f3f4f6,
+          #d1d5db
+        ); /* soft gradient background */
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        color: #6a0dad; /* purple accent */
+        margin-bottom: 25px;
+        text-align: center;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        padding: 35px 45px;
+        max-width: 750px;
+        width: 90%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+      }
+
+      p {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        margin-bottom: 20px;
+        transition: 0.3s;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #6a0dad;
+        box-shadow: 0 0 10px rgba(106, 13, 173, 0.3);
+      }
+
+      .buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        background: linear-gradient(45deg, #6a0dad, #9b30ff);
+        color: #fff;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.35);
+      }
+
+      #result {
+        margin-top: 25px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+        min-height: 40px;
+      }
+
+      .warning {
+        color: #dc2626; /* red warning */
+      }
+
+      /* Subtle animation for result */
+      #result.show {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>💜 Breast Cancer Predictor</h1>
+    <div class="container">
+      <p>Enter <strong>30 feature values</strong> separated by commas:</p>
+      <input id="features" placeholder="e.g., 17.99,10.38,122.8,..." />
+      <div class="buttons">
+        <button onclick="predict('logistic')">Logistic Regression</button>
+        <button onclick="predict('tree')">Decision Tree</button>
+      </div>
+      <p id="result"></p>
+    </div>
+
+    <script>
+      const BACKEND_URL = "http://127.0.0.1:8000"; // Replace with deployed backend URL later
+
+      async function predict(model) {
+        const inputText = document.getElementById("features").value;
+        const featureValues = inputText
+          .split(",")
+          .map((x) => parseFloat(x.trim()));
+
+        const resultEl = document.getElementById("result");
+        resultEl.classList.remove("show");
+
+        if (featureValues.length !== 30 || featureValues.some(isNaN)) {
+          resultEl.innerHTML =
+            '<span class="warning">⚠ Please enter exactly 30 numeric values!</span>';
+          resultEl.classList.add("show");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BACKEND_URL}/predict/${model}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ features: featureValues }),
+          });
+
+          const data = await response.json();
+          const predictionText =
+            data.prediction === 1 ? "Benign ✅" : "Malignant ❌";
+
+          resultEl.innerHTML = `Model: <strong>${data.model}</strong><br>Prediction: <strong>${predictionText}</strong>`;
+          resultEl.classList.add("show");
+        } catch (error) {
+          resultEl.innerHTML =
+            '<span class="warning">⚠ Error connecting to backend!</span>';
+          resultEl.classList.add("show");
+          console.error(error);
+        }
+      }
+    </script>
+  </body>
+</html>
